@@ -19,9 +19,10 @@ const ResumePreview = ({ data }: ResumePreviewProps) => {
   } = data;
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const [pages, setPages] = useState<number>(1);
   
   useEffect(() => {
-    // Function to render the resume content directly
+    // Function to render the resume content with proper pagination
     const renderResume = () => {
       if (!containerRef.current) return;
       
@@ -36,10 +37,10 @@ const ResumePreview = ({ data }: ResumePreviewProps) => {
       firstPage.className = 'resume-page';
       container.appendChild(firstPage);
       
-      // Create content div for the first page
-      const contentDiv = document.createElement('div');
-      contentDiv.className = 'resume-content';
-      firstPage.appendChild(contentDiv);
+      let currentPage = firstPage;
+      let currentContentDiv = document.createElement('div');
+      currentContentDiv.className = 'resume-content';
+      currentPage.appendChild(currentContentDiv);
       
       // Add header/contact info
       if (personalInfo.name) {
@@ -98,8 +99,35 @@ const ResumePreview = ({ data }: ResumePreviewProps) => {
           headerSection.appendChild(contactDiv);
         }
         
-        contentDiv.appendChild(headerSection);
+        currentContentDiv.appendChild(headerSection);
       }
+      
+      // Function to check if adding a section would overflow and create a new page if needed
+      const checkOverflowAndAddSection = (sectionElement: HTMLElement) => {
+        // Temporarily add the section to check if it causes overflow
+        currentContentDiv.appendChild(sectionElement);
+        
+        // Check if it overflows the page
+        const pageHeight = 1056; // approximately 11 inches at 96dpi
+        if (currentPage.scrollHeight > pageHeight) {
+          // Remove section from current page
+          currentContentDiv.removeChild(sectionElement);
+          
+          // Create a new page
+          const newPage = document.createElement('div');
+          newPage.className = 'resume-page';
+          container.appendChild(newPage);
+          
+          // Update current page reference
+          currentPage = newPage;
+          currentContentDiv = document.createElement('div');
+          currentContentDiv.className = 'resume-content';
+          currentPage.appendChild(currentContentDiv);
+          
+          // Add section to the new page
+          currentContentDiv.appendChild(sectionElement);
+        }
+      };
       
       // Add summary section
       if (summary) {
@@ -115,7 +143,7 @@ const ResumePreview = ({ data }: ResumePreviewProps) => {
         summaryContent.textContent = summary;
         summarySection.appendChild(summaryContent);
         
-        contentDiv.appendChild(summarySection);
+        checkOverflowAndAddSection(summarySection);
       }
       
       // Add experience section
@@ -165,15 +193,46 @@ const ResumePreview = ({ data }: ResumePreviewProps) => {
             expItem.appendChild(bulletsList);
           }
           
+          // Check if adding this experience item would overflow the page
           expSection.appendChild(expItem);
+          
+          // Check if the whole section is too large and would overflow
+          if (expSection.offsetHeight > 800) {
+            // Remove the item we just added
+            expSection.removeChild(expItem);
+            
+            // Add the current experience section to the page
+            checkOverflowAndAddSection(expSection);
+            
+            // Create a new experience section for the next items
+            const newExpSection = document.createElement('div');
+            newExpSection.className = 'resume-section';
+            
+            // Only add the title if it's the first item in a new page
+            if (currentContentDiv.children.length === 0) {
+              const newExpTitle = document.createElement('div');
+              newExpTitle.className = 'resume-section-title';
+              newExpTitle.textContent = 'EXPERIENCE (Continued)';
+              newExpSection.appendChild(newExpTitle);
+            }
+            
+            // Add the item to the new section
+            newExpSection.appendChild(expItem);
+            
+            // Replace the section reference
+            expSection = newExpSection;
+          }
         });
         
-        contentDiv.appendChild(expSection);
+        // Add any remaining experience items
+        if (expSection.children.length > 0) {
+          checkOverflowAndAddSection(expSection);
+        }
       }
       
-      // Add projects section
+      // Add projects section with similar logic to experience
       if (projects.length > 0) {
-        const projSection = document.createElement('div');
+        let projSection = document.createElement('div');
         projSection.className = 'resume-section';
         
         const projTitle = document.createElement('div');
@@ -211,9 +270,39 @@ const ResumePreview = ({ data }: ResumePreviewProps) => {
           }
           
           projSection.appendChild(projItem);
+          
+          // Check if the whole section is too large and would overflow
+          if (projSection.offsetHeight > 800) {
+            // Remove the item we just added
+            projSection.removeChild(projItem);
+            
+            // Add the current projects section to the page
+            checkOverflowAndAddSection(projSection);
+            
+            // Create a new projects section for the next items
+            const newProjSection = document.createElement('div');
+            newProjSection.className = 'resume-section';
+            
+            // Only add the title if it's the first item in a new page
+            if (currentContentDiv.children.length === 0) {
+              const newProjTitle = document.createElement('div');
+              newProjTitle.className = 'resume-section-title';
+              newProjTitle.textContent = 'PROJECTS (Continued)';
+              newProjSection.appendChild(newProjTitle);
+            }
+            
+            // Add the item to the new section
+            newProjSection.appendChild(projItem);
+            
+            // Replace the section reference
+            projSection = newProjSection;
+          }
         });
         
-        contentDiv.appendChild(projSection);
+        // Add any remaining project items
+        if (projSection.children.length > 0) {
+          checkOverflowAndAddSection(projSection);
+        }
       }
       
       // Add education section
@@ -253,7 +342,7 @@ const ResumePreview = ({ data }: ResumePreviewProps) => {
           eduSection.appendChild(eduItem);
         });
         
-        contentDiv.appendChild(eduSection);
+        checkOverflowAndAddSection(eduSection);
       }
       
       // Add certifications section
@@ -287,7 +376,7 @@ const ResumePreview = ({ data }: ResumePreviewProps) => {
         });
         
         certSection.appendChild(certsDiv);
-        contentDiv.appendChild(certSection);
+        checkOverflowAndAddSection(certSection);
       }
       
       // Add skills section
@@ -321,51 +410,12 @@ const ResumePreview = ({ data }: ResumePreviewProps) => {
         });
         
         skillsSection.appendChild(skillsGrid);
-        contentDiv.appendChild(skillsSection);
+        checkOverflowAndAddSection(skillsSection);
       }
-      
-      // Check if content exceeds page height and create new pages if needed
-      const paginateContent = () => {
-        const pageHeight = 1056; // approximately 11 inches at 96dpi
-        const allPages = Array.from(container.querySelectorAll('.resume-page'));
-        
-        for (let i = 0; i < allPages.length; i++) {
-          const page = allPages[i] as HTMLElement;
-          
-          if (page.scrollHeight > pageHeight) {
-            // Content exceeds this page, need to move some to next page
-            const content = page.querySelector('.resume-content') as HTMLElement;
-            const sections = Array.from(content.children);
-            
-            // Create a new page
-            const newPage = document.createElement('div');
-            newPage.className = 'resume-page';
-            container.appendChild(newPage);
-            
-            // Create content div for the new page
-            const newContent = document.createElement('div');
-            newContent.className = 'resume-content';
-            newPage.appendChild(newContent);
-            
-            // Find which section to move
-            let sectionToMoveIndex = sections.length - 1;
-            while (page.scrollHeight > pageHeight && sectionToMoveIndex > 0) {
-              const sectionToMove = sections[sectionToMoveIndex];
-              content.removeChild(sectionToMove);
-              newContent.prepend(sectionToMove);
-              sectionToMoveIndex--;
-            }
-            
-            // Recursively check if the new page also needs pagination
-            paginateContent();
-          }
-        }
-      };
-      
-      paginateContent();
       
       // Add page numbers
       const allPages = Array.from(container.querySelectorAll('.resume-page'));
+      setPages(allPages.length);
       allPages.forEach((page, index) => {
         const pageNumber = document.createElement('div');
         pageNumber.className = 'resume-page-number';
