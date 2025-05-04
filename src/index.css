@@ -128,6 +128,12 @@
   @apply p-8 text-resume-secondary;
 }
 
+/* Force display of all content in the hidden template */
+.resume-content-template > div {
+  display: block !important;
+  visibility: visible !important;
+}
+
 @media (max-width: 1024px) {
   .resume-page {
     width: 100%;

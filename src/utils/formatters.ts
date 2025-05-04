@@ -1,3 +1,4 @@
+
 export const formatDate = (dateString: string): string => {
   if (!dateString) return '';
   
@@ -14,4 +15,9 @@ export const formatDate = (dateString: string): string => {
 
 export const formatPageNumber = (current: number, total: number): string => {
   return `Page ${current} of ${total}`;
+};
+
+// Add a safe text formatter to handle undefined/null values
+export const formatSafeText = (text: string | undefined | null, fallback: string = ''): string => {
+  return text ?? fallback;
 };
