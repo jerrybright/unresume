@@ -34,18 +34,6 @@ export const generatePDF = async (resumeData: ResumeDataType) => {
         useCORS: true,
         logging: false,
         windowWidth: 1200, // Set a consistent window width for rendering
-        onclone: (document) => {
-          // Make sure all content is visible for PDF capture
-          const clonedElement = document.getElementById("resume-preview");
-          if (clonedElement) {
-            const pages = clonedElement.querySelectorAll(".resume-page");
-            pages.forEach(page => {
-              (page as HTMLElement).style.height = "11in";
-              (page as HTMLElement).style.overflow = "visible";
-              (page as HTMLElement).style.display = "block";
-            });
-          }
-        }
       });
       
       const imgData = canvas.toDataURL("image/png");

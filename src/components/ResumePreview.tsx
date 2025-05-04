@@ -1,6 +1,6 @@
 
 import { ResumeDataType } from "@/types/resume";
-import { formatDate } from "@/utils/formatters";
+import { formatDate, formatSafeText } from "@/utils/formatters";
 import { useEffect, useRef, useState } from "react";
 
 interface ResumePreviewProps {
@@ -18,225 +18,369 @@ const ResumePreview = ({ data }: ResumePreviewProps) => {
     skills
   } = data;
 
-  const [pages, setPages] = useState<HTMLDivElement[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
-    const distributeContent = () => {
+    // Function to render the resume content directly
+    const renderResume = () => {
       if (!containerRef.current) return;
       
-      // Reset
+      // Clear existing content
       const container = containerRef.current;
-      const existingPages = container.querySelectorAll('.resume-page');
-      existingPages.forEach(page => page.remove());
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
       
       // Create first page
       const firstPage = document.createElement('div');
       firstPage.className = 'resume-page';
       container.appendChild(firstPage);
       
-      // Clone all content
-      const content = document.querySelector('.resume-content-template');
-      if (!content) return;
+      // Create content div for the first page
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'resume-content';
+      firstPage.appendChild(contentDiv);
       
-      const contentClone = content.cloneNode(true) as HTMLElement;
-      firstPage.appendChild(contentClone);
-      
-      // Check if content fits
-      const pageHeight = 1056; // ~11 inches at 96dpi
-      let currentPage = firstPage;
-      
-      // Get all section elements
-      const sections = Array.from(contentClone.children);
-      
-      // Process sections to check if they fit on the current page
-      for (let i = 0; i < sections.length; i++) {
-        const section = sections[i] as HTMLElement;
+      // Add header/contact info
+      if (personalInfo.name) {
+        const headerSection = document.createElement('div');
+        headerSection.className = 'resume-section header-section';
         
-        if (currentPage.scrollHeight > pageHeight) {
-          // Content exceeds page height, move this section to next page
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'resume-name';
+        nameDiv.textContent = personalInfo.name.toUpperCase();
+        headerSection.appendChild(nameDiv);
+        
+        if (personalInfo) {
+          const contactDiv = document.createElement('div');
+          contactDiv.className = 'resume-contact';
           
-          // Create new page
-          const newPage = document.createElement('div');
-          newPage.className = 'resume-page';
-          container.appendChild(newPage);
+          let contactHTML = '';
           
-          // Move this section to new page
-          currentPage.removeChild(section);
-          newPage.appendChild(section);
-          currentPage = newPage;
-          
-          // Also move any remaining sections to the new page
-          for (let j = i + 1; j < sections.length; j++) {
-            if (contentClone.contains(sections[j])) {
-              contentClone.removeChild(sections[j]);
-              newPage.appendChild(sections[j]);
-            }
+          if (personalInfo.phone) {
+            contactHTML += `<span>${personalInfo.phone}</span>`;
           }
+          
+          if (personalInfo.phone && personalInfo.location) {
+            contactHTML += `<span> • </span>`;
+          }
+          
+          if (personalInfo.location) {
+            contactHTML += `<span>${personalInfo.location}</span>`;
+          }
+          
+          if ((personalInfo.phone || personalInfo.location) && 
+              (personalInfo.portfolio || personalInfo.linkedin || personalInfo.email)) {
+            contactHTML += `<br />`;
+          }
+          
+          if (personalInfo.portfolio) {
+            contactHTML += `<span>Portfolio: ${personalInfo.portfolio}</span>`;
+          }
+          
+          if (personalInfo.portfolio && personalInfo.linkedin) {
+            contactHTML += `<span> • </span>`;
+          }
+          
+          if (personalInfo.linkedin) {
+            contactHTML += `<span>LinkedIn/${personalInfo.linkedin}</span>`;
+          }
+          
+          if ((personalInfo.portfolio || personalInfo.linkedin) && personalInfo.email) {
+            contactHTML += `<span> • </span>`;
+          }
+          
+          if (personalInfo.email) {
+            contactHTML += `<span>${personalInfo.email}</span>`;
+          }
+          
+          contactDiv.innerHTML = contactHTML;
+          headerSection.appendChild(contactDiv);
         }
+        
+        contentDiv.appendChild(headerSection);
       }
       
-      // Update pages state
-      setPages(Array.from(container.querySelectorAll('.resume-page')) as HTMLDivElement[]);
+      // Add summary section
+      if (summary) {
+        const summarySection = document.createElement('div');
+        summarySection.className = 'resume-section';
+        
+        const summaryTitle = document.createElement('div');
+        summaryTitle.className = 'resume-section-title';
+        summaryTitle.textContent = 'SUMMARY';
+        summarySection.appendChild(summaryTitle);
+        
+        const summaryContent = document.createElement('div');
+        summaryContent.textContent = summary;
+        summarySection.appendChild(summaryContent);
+        
+        contentDiv.appendChild(summarySection);
+      }
+      
+      // Add experience section
+      if (experience.length > 0) {
+        const expSection = document.createElement('div');
+        expSection.className = 'resume-section';
+        
+        const expTitle = document.createElement('div');
+        expTitle.className = 'resume-section-title';
+        expTitle.textContent = 'EXPERIENCE';
+        expSection.appendChild(expTitle);
+        
+        experience.forEach(exp => {
+          const expItem = document.createElement('div');
+          expItem.className = 'resume-item';
+          
+          const headerDiv = document.createElement('div');
+          headerDiv.className = 'flex justify-between';
+          
+          const titleDiv = document.createElement('div');
+          titleDiv.className = 'font-bold';
+          titleDiv.textContent = `${exp.title} ${exp.company ? `(${exp.company})` : ''}`;
+          headerDiv.appendChild(titleDiv);
+          
+          const dateDiv = document.createElement('div');
+          dateDiv.className = 'text-right';
+          dateDiv.textContent = `${formatDate(exp.startDate)} - ${exp.current ? 'Present' : formatDate(exp.endDate)}`;
+          headerDiv.appendChild(dateDiv);
+          
+          expItem.appendChild(headerDiv);
+          
+          const locationDiv = document.createElement('div');
+          locationDiv.className = 'text-sm italic mb-1';
+          locationDiv.textContent = `${exp.location}${exp.isRemote ? ', Remote' : ''}`;
+          expItem.appendChild(locationDiv);
+          
+          if (exp.bulletPoints && exp.bulletPoints.length > 0) {
+            const bulletsList = document.createElement('ul');
+            bulletsList.className = 'list-disc pl-5 text-sm';
+            
+            exp.bulletPoints.filter(Boolean).forEach(point => {
+              const listItem = document.createElement('li');
+              listItem.textContent = point;
+              bulletsList.appendChild(listItem);
+            });
+            
+            expItem.appendChild(bulletsList);
+          }
+          
+          expSection.appendChild(expItem);
+        });
+        
+        contentDiv.appendChild(expSection);
+      }
+      
+      // Add projects section
+      if (projects.length > 0) {
+        const projSection = document.createElement('div');
+        projSection.className = 'resume-section';
+        
+        const projTitle = document.createElement('div');
+        projTitle.className = 'resume-section-title';
+        projTitle.textContent = 'PROJECTS';
+        projSection.appendChild(projTitle);
+        
+        projects.forEach(project => {
+          const projItem = document.createElement('div');
+          projItem.className = 'resume-item';
+          
+          const titleDiv = document.createElement('div');
+          titleDiv.className = 'font-bold';
+          titleDiv.textContent = project.title;
+          projItem.appendChild(titleDiv);
+          
+          if (project.description) {
+            const descDiv = document.createElement('div');
+            descDiv.className = 'text-sm italic mb-1';
+            descDiv.textContent = project.description;
+            projItem.appendChild(descDiv);
+          }
+          
+          if (project.bulletPoints && project.bulletPoints.length > 0) {
+            const bulletsList = document.createElement('ul');
+            bulletsList.className = 'list-disc pl-5 text-sm';
+            
+            project.bulletPoints.filter(Boolean).forEach(point => {
+              const listItem = document.createElement('li');
+              listItem.textContent = point;
+              bulletsList.appendChild(listItem);
+            });
+            
+            projItem.appendChild(bulletsList);
+          }
+          
+          projSection.appendChild(projItem);
+        });
+        
+        contentDiv.appendChild(projSection);
+      }
+      
+      // Add education section
+      if (education.length > 0) {
+        const eduSection = document.createElement('div');
+        eduSection.className = 'resume-section';
+        
+        const eduTitle = document.createElement('div');
+        eduTitle.className = 'resume-section-title';
+        eduTitle.textContent = 'EDUCATION';
+        eduSection.appendChild(eduTitle);
+        
+        education.forEach(edu => {
+          const eduItem = document.createElement('div');
+          eduItem.className = 'resume-item';
+          
+          const headerDiv = document.createElement('div');
+          headerDiv.className = 'flex justify-between';
+          
+          const degreeDiv = document.createElement('div');
+          degreeDiv.className = 'font-bold';
+          degreeDiv.textContent = edu.degree;
+          headerDiv.appendChild(degreeDiv);
+          
+          const dateDiv = document.createElement('div');
+          dateDiv.className = 'text-right';
+          dateDiv.textContent = `${edu.startYear} - ${edu.endYear}`;
+          headerDiv.appendChild(dateDiv);
+          
+          eduItem.appendChild(headerDiv);
+          
+          const instDiv = document.createElement('div');
+          instDiv.className = 'text-sm';
+          instDiv.textContent = edu.institution;
+          eduItem.appendChild(instDiv);
+          
+          eduSection.appendChild(eduItem);
+        });
+        
+        contentDiv.appendChild(eduSection);
+      }
+      
+      // Add certifications section
+      if (certifications.length > 0) {
+        const certSection = document.createElement('div');
+        certSection.className = 'resume-section';
+        
+        const certTitle = document.createElement('div');
+        certTitle.className = 'resume-section-title';
+        certTitle.textContent = 'CERTIFICATIONS';
+        certSection.appendChild(certTitle);
+        
+        const certsDiv = document.createElement('div');
+        certsDiv.className = 'space-y-1';
+        
+        certifications.forEach(cert => {
+          const certItem = document.createElement('div');
+          
+          const nameSpan = document.createElement('span');
+          nameSpan.className = 'font-bold';
+          nameSpan.textContent = cert.name;
+          certItem.appendChild(nameSpan);
+          
+          if (cert.issuer) {
+            const issuerSpan = document.createElement('span');
+            issuerSpan.textContent = `, ${cert.issuer}`;
+            certItem.appendChild(issuerSpan);
+          }
+          
+          certsDiv.appendChild(certItem);
+        });
+        
+        certSection.appendChild(certsDiv);
+        contentDiv.appendChild(certSection);
+      }
+      
+      // Add skills section
+      if (skills.length > 0) {
+        const skillsSection = document.createElement('div');
+        skillsSection.className = 'resume-section';
+        
+        const skillsTitle = document.createElement('div');
+        skillsTitle.className = 'resume-section-title';
+        skillsTitle.textContent = 'SKILLS';
+        skillsSection.appendChild(skillsTitle);
+        
+        const skillsGrid = document.createElement('div');
+        skillsGrid.className = 'grid grid-cols-1 gap-2';
+        
+        skills.forEach(skillCategory => {
+          const skillItem = document.createElement('div');
+          skillItem.className = 'grid grid-cols-4 gap-2';
+          
+          const categoryDiv = document.createElement('div');
+          categoryDiv.className = 'font-bold';
+          categoryDiv.textContent = skillCategory.category;
+          skillItem.appendChild(categoryDiv);
+          
+          const skillsDiv = document.createElement('div');
+          skillsDiv.className = 'col-span-3';
+          skillsDiv.textContent = skillCategory.skills;
+          skillItem.appendChild(skillsDiv);
+          
+          skillsGrid.appendChild(skillItem);
+        });
+        
+        skillsSection.appendChild(skillsGrid);
+        contentDiv.appendChild(skillsSection);
+      }
+      
+      // Check if content exceeds page height and create new pages if needed
+      const paginateContent = () => {
+        const pageHeight = 1056; // approximately 11 inches at 96dpi
+        const allPages = Array.from(container.querySelectorAll('.resume-page'));
+        
+        for (let i = 0; i < allPages.length; i++) {
+          const page = allPages[i] as HTMLElement;
+          
+          if (page.scrollHeight > pageHeight) {
+            // Content exceeds this page, need to move some to next page
+            const content = page.querySelector('.resume-content') as HTMLElement;
+            const sections = Array.from(content.children);
+            
+            // Create a new page
+            const newPage = document.createElement('div');
+            newPage.className = 'resume-page';
+            container.appendChild(newPage);
+            
+            // Create content div for the new page
+            const newContent = document.createElement('div');
+            newContent.className = 'resume-content';
+            newPage.appendChild(newContent);
+            
+            // Find which section to move
+            let sectionToMoveIndex = sections.length - 1;
+            while (page.scrollHeight > pageHeight && sectionToMoveIndex > 0) {
+              const sectionToMove = sections[sectionToMoveIndex];
+              content.removeChild(sectionToMove);
+              newContent.prepend(sectionToMove);
+              sectionToMoveIndex--;
+            }
+            
+            // Recursively check if the new page also needs pagination
+            paginateContent();
+          }
+        }
+      };
+      
+      paginateContent();
+      
+      // Add page numbers
+      const allPages = Array.from(container.querySelectorAll('.resume-page'));
+      allPages.forEach((page, index) => {
+        const pageNumber = document.createElement('div');
+        pageNumber.className = 'resume-page-number';
+        pageNumber.textContent = `Page ${index + 1} of ${allPages.length}`;
+        page.appendChild(pageNumber);
+      });
     };
-
-    // Call on initial render and when data changes
-    distributeContent();
     
-    // Also recalculate on window resize
-    window.addEventListener('resize', distributeContent);
-    return () => window.removeEventListener('resize', distributeContent);
-  }, [data]);
+    // Call the rendering function whenever data changes
+    renderResume();
+  }, [data, personalInfo, summary, experience, projects, education, certifications, skills]);
 
   return (
     <div id="resume-preview" ref={containerRef} className="resume-preview-container">
-      {/* Hidden template that will be cloned and distributed across pages */}
-      <div className="resume-content-template" style={{ display: 'none' }}>
-        {/* Header/Contact Info */}
-        {personalInfo.name && (
-          <div className="resume-section header-section">
-            <div className="resume-name">
-              {personalInfo.name.toUpperCase()}
-            </div>
-            
-            {personalInfo && (
-              <div className="resume-contact">
-                {personalInfo.phone && (
-                  <span>{personalInfo.phone}</span>
-                )}
-                {personalInfo.phone && personalInfo.location && (
-                  <span> • </span>
-                )}
-                {personalInfo.location && (
-                  <span>{personalInfo.location}</span>
-                )}
-                {(personalInfo.phone || personalInfo.location) && 
-                  (personalInfo.portfolio || personalInfo.linkedin || personalInfo.email) && (
-                  <br />
-                )}
-                {personalInfo.portfolio && (
-                  <span>Portfolio: {personalInfo.portfolio}</span>
-                )}
-                {personalInfo.portfolio && personalInfo.linkedin && (
-                  <span> • </span>
-                )}
-                {personalInfo.linkedin && (
-                  <span>LinkedIn/{personalInfo.linkedin}</span>
-                )}
-                {(personalInfo.portfolio || personalInfo.linkedin) && personalInfo.email && (
-                  <span> • </span>
-                )}
-                {personalInfo.email && (
-                  <span>{personalInfo.email}</span>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Summary Section */}
-        {summary && (
-          <div className="resume-section">
-            <div className="resume-section-title">SUMMARY</div>
-            <div>{summary}</div>
-          </div>
-        )}
-
-        {/* Experience Section */}
-        {experience.length > 0 && (
-          <div className="resume-section">
-            <div className="resume-section-title">EXPERIENCE</div>
-            {experience.map((exp) => (
-              <div key={exp.id} className="resume-item">
-                <div className="flex justify-between">
-                  <div className="font-bold">{exp.title} {exp.company && `(${exp.company})`}</div>
-                  <div className="text-right">
-                    {formatDate(exp.startDate)} - {exp.current ? 'Present' : formatDate(exp.endDate)}
-                  </div>
-                </div>
-                <div className="text-sm italic mb-1">
-                  {exp.location}{exp.isRemote ? ', Remote' : ''}
-                </div>
-                <ul className="list-disc pl-5 text-sm">
-                  {exp.bulletPoints.filter(Boolean).map((point, i) => (
-                    <li key={i}>{point}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Projects Section */}
-        {projects.length > 0 && (
-          <div className="resume-section">
-            <div className="resume-section-title">PROJECTS</div>
-            {projects.map((project) => (
-              <div key={project.id} className="resume-item">
-                <div className="font-bold">{project.title}</div>
-                {project.description && (
-                  <div className="text-sm italic mb-1">{project.description}</div>
-                )}
-                <ul className="list-disc pl-5 text-sm">
-                  {project.bulletPoints.filter(Boolean).map((point, i) => (
-                    <li key={i}>{point}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Education Section */}
-        {education.length > 0 && (
-          <div className="resume-section">
-            <div className="resume-section-title">EDUCATION</div>
-            {education.map((edu) => (
-              <div key={edu.id} className="resume-item">
-                <div className="flex justify-between">
-                  <div className="font-bold">{edu.degree}</div>
-                  <div className="text-right">
-                    {edu.startYear} - {edu.endYear}
-                  </div>
-                </div>
-                <div className="text-sm">{edu.institution}</div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Certifications Section */}
-        {certifications.length > 0 && (
-          <div className="resume-section">
-            <div className="resume-section-title">CERTIFICATIONS</div>
-            <div className="space-y-1">
-              {certifications.map((cert) => (
-                <div key={cert.id}>
-                  <span className="font-bold">{cert.name}</span>
-                  {cert.issuer && <span>, {cert.issuer}</span>}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Skills Section */}
-        {skills.length > 0 && (
-          <div className="resume-section">
-            <div className="resume-section-title">SKILLS</div>
-            <div className="grid grid-cols-1 gap-2">
-              {skills.map((skillCategory) => (
-                <div key={skillCategory.id} className="grid grid-cols-4 gap-2">
-                  <div className="font-bold">{skillCategory.category}</div>
-                  <div className="col-span-3">{skillCategory.skills}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-      
-      {/* Pages will be rendered here by the useEffect */}
+      {/* Content will be rendered dynamically by the useEffect */}
     </div>
   );
 };

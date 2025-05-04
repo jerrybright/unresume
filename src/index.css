@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
 
 @tailwind base;
@@ -121,17 +120,6 @@
 
 .resume-page-number {
   @apply text-xs text-gray-400 absolute bottom-2 right-4;
-}
-
-/* For template only - this won't be visible */
-.resume-content-template {
-  @apply p-8 text-resume-secondary;
-}
-
-/* Force display of all content in the hidden template */
-.resume-content-template > div {
-  display: block !important;
-  visibility: visible !important;
 }
 
 @media (max-width: 1024px) {
