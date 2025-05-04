@@ -1,4 +1,3 @@
-
 export const formatDate = (dateString: string): string => {
   if (!dateString) return '';
   
@@ -11,4 +10,8 @@ export const formatDate = (dateString: string): string => {
   const year = date.getFullYear();
   
   return `${month} ${year}`;
+};
+
+export const formatPageNumber = (current: number, total: number): string => {
+  return `Page ${current} of ${total}`;
 };

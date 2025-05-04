@@ -1,6 +1,7 @@
 
 import { ResumeDataType } from "@/types/resume";
 import { formatDate } from "@/utils/formatters";
+import { useEffect, useRef, useState } from "react";
 
 interface ResumePreviewProps {
   data: ResumeDataType;
@@ -17,45 +18,118 @@ const ResumePreview = ({ data }: ResumePreviewProps) => {
     skills
   } = data;
 
+  const [pages, setPages] = useState<HTMLDivElement[]>([]);
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    const distributeContent = () => {
+      if (!containerRef.current) return;
+      
+      // Reset
+      const container = containerRef.current;
+      const existingPages = container.querySelectorAll('.resume-page');
+      existingPages.forEach(page => page.remove());
+      
+      // Create first page
+      const firstPage = document.createElement('div');
+      firstPage.className = 'resume-page';
+      container.appendChild(firstPage);
+      
+      // Clone all content
+      const content = document.querySelector('.resume-content-template');
+      if (!content) return;
+      
+      const contentClone = content.cloneNode(true) as HTMLElement;
+      firstPage.appendChild(contentClone);
+      
+      // Check if content fits
+      const pageHeight = 1056; // ~11 inches at 96dpi
+      let currentPage = firstPage;
+      
+      // Get all section elements
+      const sections = Array.from(contentClone.children);
+      
+      // Process sections to check if they fit on the current page
+      for (let i = 0; i < sections.length; i++) {
+        const section = sections[i] as HTMLElement;
+        
+        if (currentPage.scrollHeight > pageHeight) {
+          // Content exceeds page height, move this section to next page
+          
+          // Create new page
+          const newPage = document.createElement('div');
+          newPage.className = 'resume-page';
+          container.appendChild(newPage);
+          
+          // Move this section to new page
+          currentPage.removeChild(section);
+          newPage.appendChild(section);
+          currentPage = newPage;
+          
+          // Also move any remaining sections to the new page
+          for (let j = i + 1; j < sections.length; j++) {
+            if (contentClone.contains(sections[j])) {
+              contentClone.removeChild(sections[j]);
+              newPage.appendChild(sections[j]);
+            }
+          }
+        }
+      }
+      
+      // Update pages state
+      setPages(Array.from(container.querySelectorAll('.resume-page')) as HTMLDivElement[]);
+    };
+
+    // Call on initial render and when data changes
+    distributeContent();
+    
+    // Also recalculate on window resize
+    window.addEventListener('resize', distributeContent);
+    return () => window.removeEventListener('resize', distributeContent);
+  }, [data]);
+
   return (
-    <div id="resume-preview" className="resume-paper">
-      <div className="resume-content">
+    <div id="resume-preview" ref={containerRef} className="resume-preview-container">
+      {/* Hidden template that will be cloned and distributed across pages */}
+      <div className="resume-content-template" style={{ display: 'none' }}>
         {/* Header/Contact Info */}
         {personalInfo.name && (
-          <div className="resume-name">
-            {personalInfo.name.toUpperCase()}
-          </div>
-        )}
-        
-        {personalInfo && (
-          <div className="resume-contact">
-            {personalInfo.phone && (
-              <span>{personalInfo.phone}</span>
-            )}
-            {personalInfo.phone && personalInfo.location && (
-              <span> • </span>
-            )}
-            {personalInfo.location && (
-              <span>{personalInfo.location}</span>
-            )}
-            {(personalInfo.phone || personalInfo.location) && 
-              (personalInfo.portfolio || personalInfo.linkedin || personalInfo.email) && (
-              <br />
-            )}
-            {personalInfo.portfolio && (
-              <span>Portfolio: {personalInfo.portfolio}</span>
-            )}
-            {personalInfo.portfolio && personalInfo.linkedin && (
-              <span> • </span>
-            )}
-            {personalInfo.linkedin && (
-              <span>LinkedIn/{personalInfo.linkedin}</span>
-            )}
-            {(personalInfo.portfolio || personalInfo.linkedin) && personalInfo.email && (
-              <span> • </span>
-            )}
-            {personalInfo.email && (
-              <span>{personalInfo.email}</span>
+          <div className="resume-section header-section">
+            <div className="resume-name">
+              {personalInfo.name.toUpperCase()}
+            </div>
+            
+            {personalInfo && (
+              <div className="resume-contact">
+                {personalInfo.phone && (
+                  <span>{personalInfo.phone}</span>
+                )}
+                {personalInfo.phone && personalInfo.location && (
+                  <span> • </span>
+                )}
+                {personalInfo.location && (
+                  <span>{personalInfo.location}</span>
+                )}
+                {(personalInfo.phone || personalInfo.location) && 
+                  (personalInfo.portfolio || personalInfo.linkedin || personalInfo.email) && (
+                  <br />
+                )}
+                {personalInfo.portfolio && (
+                  <span>Portfolio: {personalInfo.portfolio}</span>
+                )}
+                {personalInfo.portfolio && personalInfo.linkedin && (
+                  <span> • </span>
+                )}
+                {personalInfo.linkedin && (
+                  <span>LinkedIn/{personalInfo.linkedin}</span>
+                )}
+                {(personalInfo.portfolio || personalInfo.linkedin) && personalInfo.email && (
+                  <span> • </span>
+                )}
+                {personalInfo.email && (
+                  <span>{personalInfo.email}</span>
+                )}
+              </div>
             )}
           </div>
         )}
@@ -161,6 +235,8 @@ const ResumePreview = ({ data }: ResumePreviewProps) => {
           </div>
         )}
       </div>
+      
+      {/* Pages will be rendered here by the useEffect */}
     </div>
   );
 };

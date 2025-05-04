@@ -79,14 +79,24 @@
   }
 }
 
-.resume-paper {
+.resume-preview-container {
+  @apply flex flex-col items-center;
+  gap: 20px;
+}
+
+.resume-page {
   @apply bg-resume-paper border border-gray-200 shadow-md;
   width: 8.5in;
   height: 11in;
+  overflow: hidden;
+  page-break-after: always;
+  position: relative;
 }
 
 .resume-content {
   @apply p-8 text-resume-secondary;
+  max-height: calc(11in - 2rem);
+  overflow: hidden;
 }
 
 .resume-section {
@@ -109,8 +119,17 @@
   @apply mb-3;
 }
 
+.resume-page-number {
+  @apply text-xs text-gray-400 absolute bottom-2 right-4;
+}
+
+/* For template only - this won't be visible */
+.resume-content-template {
+  @apply p-8 text-resume-secondary;
+}
+
 @media (max-width: 1024px) {
-  .resume-paper {
+  .resume-page {
     width: 100%;
     height: auto;
     min-height: 11in;
@@ -122,10 +141,21 @@
     display: none !important;
   }
   
-  .resume-paper {
+  .resume-page {
     width: 8.5in;
     height: 11in;
     box-shadow: none;
     border: none;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .resume-page + .resume-page {
+    margin-top: 0.5in;
+  }
+
+  @page {
+    size: letter;
+    margin: 0;
   }
 }

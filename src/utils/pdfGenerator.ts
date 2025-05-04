@@ -8,25 +8,41 @@ export const generatePDF = async (resumeData: ResumeDataType) => {
   if (!element) return;
 
   try {
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-    });
-    
-    const imgData = canvas.toDataURL("image/png");
     const pdf = new jsPDF({
       orientation: "portrait",
-      unit: "px",
-      format: [canvas.width, canvas.height]
+      unit: "pt",
+      format: "a4"
     });
     
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
     
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    // Get all page elements
+    const pageElements = element.querySelectorAll(".resume-page");
+    
+    // For each page, create a canvas and add to PDF
+    for (let i = 0; i < pageElements.length; i++) {
+      const pageElement = pageElements[i] as HTMLElement;
+      
+      // If not the first page, add a new page to the PDF
+      if (i > 0) {
+        pdf.addPage();
+      }
+      
+      const canvas = await html2canvas(pageElement, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+      
+      const imgData = canvas.toDataURL("image/png");
+      pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
+    }
+    
     pdf.save(`${resumeData.personalInfo.name.replace(/\s+/g, "_")}_Resume.pdf`);
+    return true;
   } catch (error) {
     console.error("Error generating PDF:", error);
+    return false;
   }
 };
