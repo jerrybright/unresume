@@ -148,13 +148,13 @@ const ResumePreview = ({ data }: ResumePreviewProps) => {
       
       // Add experience section
       if (experience.length > 0) {
-        const expSection = document.createElement('div');
-        expSection.className = 'resume-section';
+        let experienceSection = document.createElement('div');
+        experienceSection.className = 'resume-section';
         
         const expTitle = document.createElement('div');
         expTitle.className = 'resume-section-title';
         expTitle.textContent = 'EXPERIENCE';
-        expSection.appendChild(expTitle);
+        experienceSection.appendChild(expTitle);
         
         experience.forEach(exp => {
           const expItem = document.createElement('div');
@@ -193,52 +193,49 @@ const ResumePreview = ({ data }: ResumePreviewProps) => {
             expItem.appendChild(bulletsList);
           }
           
-          // Check if adding this experience item would overflow the page
-          expSection.appendChild(expItem);
+          // Add the experience item to the section
+          experienceSection.appendChild(expItem);
           
           // Check if the whole section is too large and would overflow
-          if (expSection.offsetHeight > 800) {
+          if (experienceSection.offsetHeight > 800) {
             // Remove the item we just added
-            expSection.removeChild(expItem);
+            experienceSection.removeChild(expItem);
             
             // Add the current experience section to the page
-            checkOverflowAndAddSection(expSection);
+            checkOverflowAndAddSection(experienceSection);
             
             // Create a new experience section for the next items
-            const newExpSection = document.createElement('div');
-            newExpSection.className = 'resume-section';
+            experienceSection = document.createElement('div');
+            experienceSection.className = 'resume-section';
             
             // Only add the title if it's the first item in a new page
             if (currentContentDiv.children.length === 0) {
               const newExpTitle = document.createElement('div');
               newExpTitle.className = 'resume-section-title';
               newExpTitle.textContent = 'EXPERIENCE (Continued)';
-              newExpSection.appendChild(newExpTitle);
+              experienceSection.appendChild(newExpTitle);
             }
             
             // Add the item to the new section
-            newExpSection.appendChild(expItem);
-            
-            // Replace the section reference
-            expSection = newExpSection;
+            experienceSection.appendChild(expItem);
           }
         });
         
         // Add any remaining experience items
-        if (expSection.children.length > 0) {
-          checkOverflowAndAddSection(expSection);
+        if (experienceSection.children.length > 0) {
+          checkOverflowAndAddSection(experienceSection);
         }
       }
       
       // Add projects section with similar logic to experience
       if (projects.length > 0) {
-        let projSection = document.createElement('div');
-        projSection.className = 'resume-section';
+        let projectsSection = document.createElement('div');
+        projectsSection.className = 'resume-section';
         
         const projTitle = document.createElement('div');
         projTitle.className = 'resume-section-title';
         projTitle.textContent = 'PROJECTS';
-        projSection.appendChild(projTitle);
+        projectsSection.appendChild(projTitle);
         
         projects.forEach(project => {
           const projItem = document.createElement('div');
@@ -269,39 +266,36 @@ const ResumePreview = ({ data }: ResumePreviewProps) => {
             projItem.appendChild(bulletsList);
           }
           
-          projSection.appendChild(projItem);
+          projectsSection.appendChild(projItem);
           
           // Check if the whole section is too large and would overflow
-          if (projSection.offsetHeight > 800) {
+          if (projectsSection.offsetHeight > 800) {
             // Remove the item we just added
-            projSection.removeChild(projItem);
+            projectsSection.removeChild(projItem);
             
             // Add the current projects section to the page
-            checkOverflowAndAddSection(projSection);
+            checkOverflowAndAddSection(projectsSection);
             
             // Create a new projects section for the next items
-            const newProjSection = document.createElement('div');
-            newProjSection.className = 'resume-section';
+            projectsSection = document.createElement('div');
+            projectsSection.className = 'resume-section';
             
             // Only add the title if it's the first item in a new page
             if (currentContentDiv.children.length === 0) {
               const newProjTitle = document.createElement('div');
               newProjTitle.className = 'resume-section-title';
               newProjTitle.textContent = 'PROJECTS (Continued)';
-              newProjSection.appendChild(newProjTitle);
+              projectsSection.appendChild(newProjTitle);
             }
             
             // Add the item to the new section
-            newProjSection.appendChild(projItem);
-            
-            // Replace the section reference
-            projSection = newProjSection;
+            projectsSection.appendChild(projItem);
           }
         });
         
         // Add any remaining project items
-        if (projSection.children.length > 0) {
-          checkOverflowAndAddSection(projSection);
+        if (projectsSection.children.length > 0) {
+          checkOverflowAndAddSection(projectsSection);
         }
       }
       
