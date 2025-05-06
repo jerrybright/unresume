@@ -97,12 +97,24 @@
 .resume-content {
   @apply p-8 text-resume-secondary;
   height: calc(297mm - 2rem);
-  /* Set display block to ensure content is visible */
   display: block !important;
+  position: relative;
 }
 
 .resume-section {
   @apply mb-4;
+  /* Remove any page break inside properties to allow sections to flow naturally */
+  page-break-inside: auto !important;
+}
+
+/* Only add page break before for the header section */
+.header-section {
+  page-break-before: always;
+}
+
+/* Allow other sections to flow naturally */
+.resume-section:not(.header-section) {
+  page-break-before: auto !important;
 }
 
 .resume-section-title {
@@ -119,6 +131,7 @@
 
 .resume-item {
   @apply mb-3;
+  page-break-inside: avoid; /* Keep individual items together */
 }
 
 .resume-page-number {
