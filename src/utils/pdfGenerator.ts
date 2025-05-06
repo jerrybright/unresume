@@ -11,11 +11,15 @@ export const generatePDF = async (resumeData: ResumeDataType) => {
   try {
     toast.info("Generating PDF...");
     
+    // Add a class to help with PDF generation styling
+    document.body.classList.add('pdf-generating');
+    
     // Use A4 format (mm for more precise control)
     const pdf = new jsPDF({
       orientation: "portrait",
       unit: "mm",
-      format: "a4"
+      format: "a4",
+      compress: false // Disable compression for better text quality
     });
     
     const pageWidth = pdf.internal.pageSize.getWidth();
@@ -26,6 +30,7 @@ export const generatePDF = async (resumeData: ResumeDataType) => {
     
     if (pageElements.length === 0) {
       toast.error("No content to generate PDF");
+      document.body.classList.remove('pdf-generating');
       return false;
     }
     
@@ -37,15 +42,19 @@ export const generatePDF = async (resumeData: ResumeDataType) => {
       if (i > 0) {
         pdf.addPage();
       }
-      
-      // Make all pages visible for proper rendering
-      pageElements.forEach((p, idx) => {
-        const page = p as HTMLElement;
-        if (idx === i) {
-          page.style.display = "block";
-          page.style.visibility = "visible";
-        } else {
-          page.style.display = "none";
+
+      // Before rendering, ensure all styles are properly applied
+      const allElements = pageElement.querySelectorAll('*');
+      allElements.forEach(el => {
+        if (el instanceof HTMLElement) {
+          // Make sure all elements are visible
+          el.style.opacity = '1';
+          el.style.visibility = 'visible';
+          
+          // Ensure proper display for flex elements
+          if (window.getComputedStyle(el).display.includes('flex')) {
+            el.style.display = 'flex';
+          }
         }
       });
       
@@ -58,24 +67,44 @@ export const generatePDF = async (resumeData: ResumeDataType) => {
           windowWidth: 794, // A4 width in pixels at 96 DPI
           backgroundColor: "#ffffff",
           allowTaint: true,
+          foreignObjectRendering: true, // Try to use foreignObject for better text rendering
           onclone: (clonedDoc) => {
             // Make sure all content is visible in the cloned document
             const clonedElement = clonedDoc.getElementById("resume-preview");
             if (clonedElement) {
-              const clonedPages = clonedElement.querySelectorAll(".resume-page");
-              clonedPages.forEach((p, idx) => {
-                const page = p as HTMLElement;
-                if (idx === i) {
-                  page.style.display = "block";
-                  page.style.visibility = "visible";
-                  // Make all child elements visible
-                  Array.from(page.querySelectorAll("*")).forEach((el) => {
-                    (el as HTMLElement).style.display = "block";
-                  });
-                } else {
-                  page.style.display = "none";
-                }
-              });
+              const clonedPage = clonedDoc.querySelectorAll(".resume-page")[i] as HTMLElement;
+              if (clonedPage) {
+                clonedPage.style.display = "block";
+                clonedPage.style.visibility = "visible";
+                clonedPage.style.position = "relative";
+                clonedPage.style.overflow = "visible";
+                
+                // Ensure proper styling for all elements
+                const allElements = clonedPage.querySelectorAll('*');
+                allElements.forEach(el => {
+                  if (el instanceof HTMLElement) {
+                    // Make sure all elements are visible
+                    el.style.opacity = '1';
+                    el.style.visibility = 'visible';
+                    
+                    // Special handling for flex containers
+                    if (window.getComputedStyle(el).display.includes('flex')) {
+                      el.style.display = 'flex';
+                    }
+                    
+                    // Fix for list items
+                    if (el.tagName === 'LI') {
+                      el.style.display = 'list-item';
+                    }
+                    
+                    // Fix for bullet lists
+                    if (el.tagName === 'UL') {
+                      el.style.listStyleType = 'disc';
+                      el.style.paddingLeft = '1.5rem';
+                    }
+                  }
+                });
+              }
             }
           }
         });
@@ -86,14 +115,12 @@ export const generatePDF = async (resumeData: ResumeDataType) => {
         pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
       } catch (err) {
         console.error("Error rendering page", i, err);
+        toast.error(`Error rendering page ${i+1}`);
       }
     }
     
-    // Restore all pages visibility
-    pageElements.forEach((p) => {
-      const page = p as HTMLElement;
-      page.style.display = "block";
-    });
+    // Cleanup PDF generation class
+    document.body.classList.remove('pdf-generating');
     
     pdf.save(`${resumeData.personalInfo.name.replace(/\s+/g, "_") || "Resume"}_Resume.pdf`);
     toast.success("Resume downloaded successfully!");
@@ -101,6 +128,7 @@ export const generatePDF = async (resumeData: ResumeDataType) => {
   } catch (error) {
     console.error("Error generating PDF:", error);
     toast.error("Failed to generate PDF");
+    document.body.classList.remove('pdf-generating');
     return false;
   }
 };

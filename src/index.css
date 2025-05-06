@@ -103,17 +103,11 @@
 
 .resume-section {
   @apply mb-4;
-  /* Remove any page break inside properties to allow sections to flow naturally */
   page-break-inside: auto !important;
 }
 
-/* Only add page break before for the header section */
-.header-section {
-  page-break-before: always;
-}
-
-/* Allow other sections to flow naturally */
-.resume-section:not(.header-section) {
+/* Allow sections to flow naturally between pages */
+.resume-section {
   page-break-before: auto !important;
 }
 
@@ -131,7 +125,7 @@
 
 .resume-item {
   @apply mb-3;
-  page-break-inside: avoid; /* Keep individual items together */
+  page-break-inside: avoid; /* Keep individual items together when possible */
 }
 
 .resume-page-number {
@@ -170,23 +164,7 @@
   }
 }
 
-/* Force resume content to display - important for pagination and PDF generation */
-#resume-preview * {
-  display: block !important;
-}
-
-#resume-preview span,
-#resume-preview li {
-  display: inline !important;
-}
-
-/* Force all elements to be visible during PDF generation */
-.pdf-generating * {
-  visibility: visible !important;
-  opacity: 1 !important;
-}
-
-/* Ensure proper bulleted lists in PDF */
+/* Make sure lists properly display bullet points */
 #resume-preview ul {
   list-style-type: disc !important;
   padding-left: 1.5rem !important;
@@ -197,7 +175,7 @@
   margin-bottom: 0.25rem !important;
 }
 
-/* Fix flex containers for PDF */
+/* Ensure flex containers display as flex */
 #resume-preview .flex {
   display: flex !important;
 }
@@ -207,4 +185,48 @@
 #resume-preview .text-xs {
   font-size: 0.875rem !important;
   line-height: 1.25rem !important;
+}
+
+/* Ensure proper grid layout */
+#resume-preview .grid {
+  display: grid !important;
+}
+
+#resume-preview .grid-cols-4 {
+  grid-template-columns: 1fr 3fr !important;
+}
+
+#resume-preview .col-span-3 {
+  grid-column: span 3 / span 3 !important;
+}
+
+/* Additional styles for PDF generation */
+.pdf-generating #resume-preview * {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.pdf-generating #resume-preview ul {
+  list-style-type: disc !important;
+  padding-left: 1.5rem !important;
+  margin-left: 0 !important;
+}
+
+.pdf-generating #resume-preview li {
+  display: list-item !important;
+  margin-bottom: 0.25rem !important;
+  page-break-inside: avoid !important;
+}
+
+.pdf-generating #resume-preview .flex {
+  display: flex !important;
+  justify-content: space-between !important;
+}
+
+.pdf-generating #resume-preview .space-y-1 > * {
+  margin-top: 0.25rem !important;
+}
+
+.pdf-generating #resume-preview .space-y-1 > *:first-child {
+  margin-top: 0 !important;
 }
