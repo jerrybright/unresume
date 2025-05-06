@@ -56,17 +56,31 @@ export const generatePDF = async (resumeData: ResumeDataType) => {
         // Use a lower scale for better performance and smaller file size
         // while still maintaining reasonable quality
         const canvas = await html2canvas(pageElement, {
-          scale: 2, // Reduced scale (was 3) for smaller file size
+          scale: 1.5, // Reduced scale for smaller file size (was 2)
           useCORS: true,
           logging: false,
           backgroundColor: "#ffffff",
-          allowTaint: true
+          allowTaint: true,
+          onclone: (clonedDoc) => {
+            // Make sure all elements are visible in the cloned document
+            const clonedElement = clonedDoc.getElementById("resume-preview");
+            if (clonedElement) {
+              const elements = clonedElement.querySelectorAll('*');
+              elements.forEach(el => {
+                if (el instanceof HTMLElement) {
+                  el.style.display = el.tagName === 'UL' ? 'block' : '';
+                  el.style.opacity = '1';
+                  el.style.visibility = 'visible';
+                }
+              });
+            }
+          }
         });
         
-        // Convert canvas to image
-        const imgData = canvas.toDataURL("image/jpeg", 0.95); // Use JPEG with high quality for better compression
+        // Convert canvas to image (further reduce quality for smaller files)
+        const imgData = canvas.toDataURL("image/jpeg", 0.8); // Lower quality JPEG
         
-        // Add image to PDF
+        // Add image to PDF with proper scaling to fit page
         pdf.addImage(imgData, "JPEG", 0, 0, pageWidth, pageHeight);
       } catch (err) {
         console.error("Error rendering page", i, err);

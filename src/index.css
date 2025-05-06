@@ -95,19 +95,20 @@
 
 .resume-content {
   @apply p-8 text-resume-secondary;
-  height: calc(297mm - 2rem);
+  height: 100%;
   display: block !important;
   position: relative;
+  overflow: visible;
 }
 
 .resume-section {
   @apply mb-4;
-  page-break-inside: auto !important;
+  page-break-inside: avoid;
 }
 
-/* Allow sections to flow naturally between pages */
-.resume-section {
-  page-break-before: auto !important;
+/* Handle section flow between pages */
+.resume-section-continuation {
+  @apply mt-6;
 }
 
 .resume-section-title {
@@ -129,6 +130,11 @@
 
 .resume-page-number {
   @apply text-xs text-gray-400 absolute bottom-2 right-4;
+}
+
+/* Make content flow better between pages */
+.resume-overflow-content {
+  overflow: visible !important;
 }
 
 @media (max-width: 1024px) {
@@ -167,6 +173,8 @@
 #resume-preview ul {
   list-style-type: disc !important;
   padding-left: 1.5rem !important;
+  margin-bottom: 0.5rem !important;
+  display: block !important;
 }
 
 #resume-preview ul li {
@@ -290,4 +298,19 @@
 @page {
   size: a4 portrait;
   margin: 0;
+}
+
+/* Improved pagination controls */
+.resume-section-container {
+  break-inside: avoid;
+}
+
+.resume-item-container {
+  break-inside: avoid;
+}
+
+/* Content overflow handling */
+.resume-content-overflow {
+  overflow: visible;
+  position: relative;
 }
