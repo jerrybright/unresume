@@ -86,8 +86,8 @@
 
 .resume-page {
   @apply bg-resume-paper border border-gray-200 shadow-md;
-  width: 8.5in;
-  height: 11in;
+  width: 210mm; /* A4 width */
+  height: 297mm; /* A4 height */
   position: relative;
   overflow: hidden;
   page-break-after: always;
@@ -96,7 +96,7 @@
 
 .resume-content {
   @apply p-8 text-resume-secondary;
-  max-height: calc(11in - 2rem);
+  height: calc(297mm - 2rem);
   /* Set display block to ensure content is visible */
   display: block !important;
 }
@@ -129,7 +129,7 @@
   .resume-page {
     width: 100%;
     height: auto;
-    min-height: 11in;
+    min-height: 297mm;
   }
 }
 
@@ -139,8 +139,8 @@
   }
   
   .resume-page {
-    width: 8.5in;
-    height: 11in;
+    width: 210mm;
+    height: 297mm;
     box-shadow: none;
     border: none;
     margin: 0;
@@ -152,17 +152,46 @@
   }
 
   @page {
-    size: letter;
+    size: a4;
     margin: 0;
   }
 }
 
-/* Force resume content to display - important for pagination */
+/* Force resume content to display - important for pagination and PDF generation */
 #resume-preview * {
-  display: block;
+  display: block !important;
 }
 
 #resume-preview span,
 #resume-preview li {
-  display: inline;
+  display: inline !important;
+}
+
+/* Force all elements to be visible during PDF generation */
+.pdf-generating * {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Ensure proper bulleted lists in PDF */
+#resume-preview ul {
+  list-style-type: disc !important;
+  padding-left: 1.5rem !important;
+}
+
+#resume-preview ul li {
+  display: list-item !important;
+  margin-bottom: 0.25rem !important;
+}
+
+/* Fix flex containers for PDF */
+#resume-preview .flex {
+  display: flex !important;
+}
+
+/* Ensure all text is visible */
+#resume-preview .text-sm,
+#resume-preview .text-xs {
+  font-size: 0.875rem !important;
+  line-height: 1.25rem !important;
 }

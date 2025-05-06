@@ -10,9 +10,11 @@ export const generatePDF = async (resumeData: ResumeDataType) => {
 
   try {
     toast.info("Generating PDF...");
+    
+    // Use A4 format (mm for more precise control)
     const pdf = new jsPDF({
       orientation: "portrait",
-      unit: "pt",
+      unit: "mm",
       format: "a4"
     });
     
@@ -36,32 +38,62 @@ export const generatePDF = async (resumeData: ResumeDataType) => {
         pdf.addPage();
       }
       
-      // Temporarily make all pages visible for canvas generation
-      const hiddenPages = Array.from(pageElements).filter((p, idx) => idx !== i) as HTMLElement[];
-      hiddenPages.forEach(p => {
-        p.style.display = "none";
+      // Make all pages visible for proper rendering
+      pageElements.forEach((p, idx) => {
+        const page = p as HTMLElement;
+        if (idx === i) {
+          page.style.display = "block";
+          page.style.visibility = "visible";
+        } else {
+          page.style.display = "none";
+        }
       });
-      pageElement.style.display = "block";
       
       try {
+        // Use higher scale for better quality
         const canvas = await html2canvas(pageElement, {
-          scale: 2,
+          scale: 3, // Higher scale for better quality
           useCORS: true,
           logging: false,
-          windowWidth: 1200, // Set a consistent window width for rendering
+          windowWidth: 794, // A4 width in pixels at 96 DPI
+          backgroundColor: "#ffffff",
+          allowTaint: true,
+          onclone: (clonedDoc) => {
+            // Make sure all content is visible in the cloned document
+            const clonedElement = clonedDoc.getElementById("resume-preview");
+            if (clonedElement) {
+              const clonedPages = clonedElement.querySelectorAll(".resume-page");
+              clonedPages.forEach((p, idx) => {
+                const page = p as HTMLElement;
+                if (idx === i) {
+                  page.style.display = "block";
+                  page.style.visibility = "visible";
+                  // Make all child elements visible
+                  Array.from(page.querySelectorAll("*")).forEach((el) => {
+                    (el as HTMLElement).style.display = "block";
+                  });
+                } else {
+                  page.style.display = "none";
+                }
+              });
+            }
+          }
         });
         
-        const imgData = canvas.toDataURL("image/png");
+        const imgData = canvas.toDataURL("image/png", 1.0);
+        
+        // Add image ensuring it covers the full A4 page
         pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
       } catch (err) {
         console.error("Error rendering page", i, err);
       }
-      
-      // Restore visibility
-      hiddenPages.forEach(p => {
-        p.style.removeProperty("display");
-      });
     }
+    
+    // Restore all pages visibility
+    pageElements.forEach((p) => {
+      const page = p as HTMLElement;
+      page.style.display = "block";
+    });
     
     pdf.save(`${resumeData.personalInfo.name.replace(/\s+/g, "_") || "Resume"}_Resume.pdf`);
     toast.success("Resume downloaded successfully!");
