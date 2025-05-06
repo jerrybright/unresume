@@ -5,12 +5,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ResumeForm from "@/components/ResumeForm";
 import ResumePreview from "@/components/ResumePreview";
 import { defaultResumeData, ResumeDataType } from "@/types/resume";
-import { PenLine, Eye, Share2 } from "lucide-react";
+import { PenLine, Eye, Share2, Download } from "lucide-react";
 import { toast } from "sonner";
+import { generatePDF } from "@/utils/pdfGenerator";
 
 const Index = () => {
   const [resumeData, setResumeData] = useState<ResumeDataType>(defaultResumeData);
   const [activeTab, setActiveTab] = useState<string>("edit");
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   const handleUpdateResumeData = (data: ResumeDataType) => {
     setResumeData(data);
@@ -41,6 +43,15 @@ const Index = () => {
     }
   };
 
+  const handleGeneratePDF = async () => {
+    setIsGeneratingPdf(true);
+    try {
+      await generatePDF(resumeData);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -52,6 +63,16 @@ const Index = () => {
             </h1>
           </div>
           <div className="space-x-2 no-print">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleGeneratePDF}
+              disabled={isGeneratingPdf}
+              className="hidden md:inline-flex"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              {isGeneratingPdf ? "Generating..." : "Download PDF"}
+            </Button>
             <Button variant="outline" size="sm" onClick={handleShare} className="hidden md:inline-flex">
               <Share2 className="mr-2 h-4 w-4" />
               Share
@@ -88,11 +109,29 @@ const Index = () => {
               <TabsContent value="preview" className="mt-0">
                 <div className="lg:hidden">
                   <ResumePreview data={resumeData} />
+                  <div className="mt-4">
+                    <Button 
+                      onClick={handleGeneratePDF} 
+                      disabled={isGeneratingPdf}
+                      className="w-full"
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      {isGeneratingPdf ? "Generating..." : "Download PDF"}
+                    </Button>
+                  </div>
                 </div>
                 <div className="hidden lg:block text-center py-8 space-y-4">
                   <p className="text-muted-foreground">
                     Preview is shown on the right side of the screen.
                   </p>
+                  <Button 
+                    onClick={handleGeneratePDF}
+                    disabled={isGeneratingPdf}
+                    className="mr-2"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    {isGeneratingPdf ? "Generating..." : "Download PDF"}
+                  </Button>
                   <Button onClick={() => setActiveTab("edit")}>
                     Return to Editing
                   </Button>
